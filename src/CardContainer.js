@@ -1,6 +1,6 @@
 import Card from "./Card";
 import axios from "axios";
-
+import "./CardContainer.css"
 import {useState, useEffect, useRef } from "react";
 
 const DECK_URL = "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1"
@@ -9,10 +9,16 @@ const DECK_URL = "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1"
 function CardContainer(){
   const [cardList, setCardList] =useState([]);
   const [isShuffling, setIsShuffling] = useState(true)
-  const [deckId, setDeckId] = useState("")
+  const [deckId, setDeckId] = useState("");
+  const timerId = useRef();
+  const [isDrawing, setIsDrawing] = useState(false);
 
   async function fetchDeck(){
     if(deckId){
+      // setIsDrawing(d => {
+      //   clearInterval(timerId.current)
+      //   return false;
+      // });
       setIsShuffling(isShuffling => true)
       const deckResult = await axios.get(`https://deckofcardsapi.com/api/deck/${deckId}/shuffle/`)
       setCardList([]);
@@ -28,6 +34,20 @@ function CardContainer(){
     fetchDeck();
   }, []);
 
+  useEffect(function startCardDrawing(){
+    if(isDrawing){
+      timerId.current = setInterval(() => {
+        getCard();
+      }, 1000);
+    } else {
+      clearInterval(timerId.current);
+    }
+  },[isDrawing, timerId]);
+
+  function toggleDrawing(){
+    setIsDrawing(d => !d);
+  }
+
   async function getCard(){
       const newCardResult = await axios.get(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`);
       let newCard = newCardResult.data.cards[0];
@@ -38,9 +58,9 @@ function CardContainer(){
 
   return(
     <div>
-      <button onClick={getCard}>Draw a Card!</button>
+      <button onClick={toggleDrawing}>{!isDrawing ? "Start Drawing": "Stop Drawing" }</button>
       <button onClick={fetchDeck}>Reshuffle deck!</button> 
-      <div className="Card-Conatiner">
+      <div className="Card-Container">
         {cardList.length <= 52 ?
         cardList.map(card => <Card key={card.code} imageUrl={card.image}/>)
         :

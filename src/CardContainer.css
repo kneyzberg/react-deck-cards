@@ -1,0 +1,6 @@
+.Card-Container{
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
