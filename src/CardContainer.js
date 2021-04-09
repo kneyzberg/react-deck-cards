@@ -8,32 +8,44 @@ const DECK_URL = "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1"
 
 function CardContainer(){
   const [cardList, setCardList] =useState([]);
-  const deckId = useRef();
+  const [isShuffling, setIsShuffling] = useState(true)
+  const [deckId, setDeckId] = useState("")
 
-  useEffect(function getCardDeck(){
-    async function fetchDeck(){
-      const deckResult = await axios.get(DECK_URL);
-      deckId.current = deckResult.data.deck_id;
+  async function fetchDeck(){
+    if(deckId){
+      setIsShuffling(isShuffling => true)
+      const deckResult = await axios.get(`https://deckofcardsapi.com/api/deck/${deckId}/shuffle/`)
+      setCardList([]);
     }
+    else {
+      const deckResult = await axios.get(DECK_URL);
+      setDeckId(deckResult.data.deck_id);
+    }
+    setIsShuffling(isShuffling => false);
+  }
+  
+  useEffect(function getCardDeck(){
     fetchDeck();
   }, []);
 
-  function getCard(){
-    async function fetchCard(){
-      const newCardResult = await axios.get(`https://deckofcardsapi.com/api/deck/${deckId.current}/draw/?count=1`);
+  async function getCard(){
+      const newCardResult = await axios.get(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`);
       let newCard = newCardResult.data.cards[0];
       setCardList(oldList => [...oldList, newCard]);
-      console.log(cardList);
-    }
-
-    fetchCard();
   };
-      
+
+  if(isShuffling) return <p>Loading...</p>
+
   return(
     <div>
       <button onClick={getCard}>Draw a Card!</button>
+      <button onClick={fetchDeck}>Reshuffle deck!</button> 
       <div className="Card-Conatiner">
-        {cardList.map(card => <Card key={card.code} imageUrl={card.image}/>)}
+        {cardList.length <= 52 ?
+        cardList.map(card => <Card key={card.code} imageUrl={card.image}/>)
+        :
+        <h4>You're out of cards</h4>
+        }
       </div>
     </div>
   )
